@@ -15,6 +15,9 @@ from typing import Optional
 from dotenv import load_dotenv
 from fastapi import UploadFile
 
+# from GA1 import handle_http_get, process_readme_task, process_google_sheets_formula,process_excel_formula,count_days_in_range,extract_csv_from_zip, sort_json_array, process_text_to_json_multicursors, process_zip_for_symbol_sum
+
+
 # Load API token securely
 load_dotenv()
 AIPROXY_TOKEN = os.getenv("AIPROXY_TOKEN")
@@ -137,470 +140,6 @@ def handle_task(question: str, file: Optional[UploadFile] = None):
     return {"error": "No matching task found."}
 
 
-
-# def handle_task(question: str, file: Optional[UploadFile] = None):
-    TASK_MAPPING = {
-        "https": handle_http_get,
-        "google sheets": process_google_sheets_formula,
-        "excel": process_excel_formula,
-        "multi-cursors": process_text_to_json_multicursors
-    }
-
-    task_groups = {
-        "extract_csv_from_zip": {"zip", "csv", "answer column"},
-        "count_days_in_range": {"date range", "how many"},
-        "sort_json_array": {"sort", "json", "array"},
-        "process_zip_for_symbol_sum": {"encodings", "UTF-8", "CP-1252"},
-        "process_readme_task": {"sha256sum", "npx", " -y prettier"},
-        # "calculate_filtered_size": {"zip", "extract", "unzip", "list files", "size", "modified date", "timestamp", "bytes"}
-    }
-
-    file_path = None
-    if file:
-        file_path = handle_file_processing(file)
-
-    print(f"📩 Received question: {question}")
-    print(f"🔍 Checking for task match...")
-
-    # **1️⃣ Exact Match Check**
-    for keyword, function in TASK_MAPPING.items():
-        if keyword in question.lower():
-            print(f"✅ Exact match found: {keyword}, calling {function.__name__}")
-            sig = inspect.signature(function)
-            return function(question, file_path) if "file_path" in sig.parameters else function(question)
-
-    # **2️⃣ Multi-Keyword Match Check**
-    for function_name, keywords in task_groups.items():
-        normalized_question = question.lower().replace("-", "")
-        matched_keywords = [kw for kw in keywords if kw in normalized_question]
-
-        print(f"🔍 Checking multi-keyword match: {function_name} -> Matched keywords: {matched_keywords}")
-
-        if len(matched_keywords) >= 2:  # ✅ If at least one match, call function
-            print(f"✅ Multi-keyword match ({matched_keywords}), calling {function_name}")
-            best_match = globals()[function_name]
-            sig = inspect.signature(best_match)
-            return best_match(question, file_path) if "file_path" in sig.parameters else best_match(question)
-
-    # **3️⃣ Embeddings-Based Fallback (Only if previous checks failed)**
-    task_descriptions = {  
-        "sort_json_array": "Sort a JSON array of objects based on a specific field.",
-        "extract_csv_from_zip": "Extract a CSV file from a ZIP archive.",
-        "count_days_in_range": "Count how many times a specific weekday appears in a given date range.",
-        "process_text_to_json_multicursors": "Download the text file and use multi-cursors and convert it into a single JSON object, where key=value pairs are converted into {key: value, key: value, ...}. What's the result when you paste the JSON at tools-in-data-science.pages.dev/jsonhash and click the Hash button?",
-        "calculate_filtered_size": "Download the zip file and extract it. Use ls with options to list all files in the folder along with their date and file size. Whats the total size of all files at least some bytes large and modified on or after the specified date?"
-    }
-
-    print("🔍 No exact or multi-keyword match found. Trying embeddings...")
-
-    question_embedding = get_embedding(question)
-    if question_embedding is None:
-        print("⚠️ Error: Failed to get embedding for question.")
-        return {"error": "Embedding service unavailable."}
-
-    best_match = None
-    best_score = 0
-
-    for task_name, desc in task_descriptions.items():
-        desc_embedding = get_embedding(desc)
-        similarity = sum(a * b for a, b in zip(question_embedding, desc_embedding))  # Dot product similarity
-
-        if similarity > best_score:
-            best_score = similarity
-            best_match = globals()[task_name]
-
-    if best_score > 0.85:  # ✅ Use embeddings only if confidence is high
-        print(f"✅ Embeddings match found ({best_score}), calling {best_match.__name__}")
-        sig = inspect.signature(best_match)
-        return best_match(question, file_path) if "file_path" in sig.parameters else best_match(question)
-
-    return {"error": "No matching task found."}  # ❌ No match found
-
-# def handle_task(question: str, file: Optional[UploadFile] = None):
-    TASK_MAPPING = {
-        # "sha256sum": process_readme_task,  i changed this because sha256sum was not unique to this question  
-        "https": handle_http_get,
-        "google sheets": process_google_sheets_formula,
-        "excel": process_excel_formula,
-        "multi-cursors": process_text_to_json_multicursors
-    }
-
-    task_groups = {
-        "extract_csv_from_zip": {"zip", "csv", "answer column"},
-        "count_days_in_range": {"date range", "how many"},
-        "sort_json_array": {"sort", "json", "array"},
-        "process_zip_for_symbol_sum": {"encodings", "UTF-8", "CP-1252"},
-        "process_readme_task": {"sha256sum", "npx", " -y prettier"},
-        "calculate_filtered_size": {}  # Needs at least 2 matches
-    }
-
-    # **File Processing**
-    file_path = None
-    if file:
-        file_path = handle_file_processing(file)
-
-    print(f"📩 Received question: {question}")  
-    print(f"🔍 Checking for task match...")  
-
-    # **🔹 Combined Matching Process**
-    best_match = None
-    best_score = 0
-
-    for keyword, function in TASK_MAPPING.items():
-        if keyword in question.lower():
-            print(f"✅ Exact match found: {keyword}, calling {function.__name__}")
-            best_match = function
-            break  # ✅ Stop here since we found an exact match
-
-    if not best_match:  # No exact match found, check multi-keyword match
-        for function_name, keywords in task_groups.items():
-            normalized_question = question.lower().replace("-", "")
-            normalized_keywords = {kw.lower().replace("-", "") for kw in keywords}
-            matched_keywords = [kw for kw in normalized_keywords if kw in normalized_question]
-            print(f"🔍 Checking multi-keyword match: {function_name} -> Matched keywords: {matched_keywords}")
-
-            if len(matched_keywords) >= 2:  # Needs at least 2 keyword matches
-                print(f"✅ Multi-keyword match ({matched_keywords}), calling {function_name}")
-                best_match = globals()[function_name]
-                break  # ✅ Stop once a valid match is found
-
-    if best_match:  
-        sig = inspect.signature(best_match)
-        result = best_match(question, file_path) if "file_path" in sig.parameters else best_match(question)
-        
-        print(f"🔍 Raw result from function: {result}")  
-        return result  # ✅ Return result immediately
-
-    # **🔹 Embeddings-Based Fallback**
-    task_descriptions = {  
-        "sort_json_array": "Sort a JSON array of objects based on a specific field.",
-        "extract_csv_from_zip": "Extract a CSV file from a ZIP archive.",
-        "count_days_in_range": "Count how many times a specific weekday appears in a given date range.",
-        "process_text_to_json_multicursors": "Download the text file and use multi-cursors and convert it into a single JSON object, where key=value pairs are converted into {key: value, key: value, ...}. What's the result when you paste the JSON at tools-in-data-science.pages.dev/jsonhash and click the Hash button?",
-        "calculate_filtered_size": "Download the zip file and extract it. Use ls with options to list all files in the folder along with their date and file size. What's the total size of all files at least some bytes large and modified on or after the specified date?"
-    }
-
-    question_embedding = get_embedding(question)
-    for task_name, desc in task_descriptions.items():
-        desc_embedding = get_embedding(desc)
-        similarity = sum(a * b for a, b in zip(question_embedding, desc_embedding))  # Dot product similarity
-
-        if similarity > best_score:
-            best_score = similarity
-            best_match = globals()[task_name]
-
-    if best_score > 0.85:  # Only if similarity is high
-        print(f"✅ Embeddings match found ({best_score}), calling {best_match.__name__}")
-        sig = inspect.signature(best_match)
-        result = best_match(question, file_path) if "file_path" in sig.parameters else best_match(question)
-        
-        print(f"🔍 Raw result from function: {result}")  
-        return result  
-
-    return {"error": "No matching task found."}  # ❌ No match found
-
-
-
-
-
-
-# def handle_task(question: str, file: Optional[UploadFile] = None):
-    TASK_MAPPING = {
-        "sha256sum": process_readme_task,  
-        "https": handle_http_get,
-        "google sheets": process_google_sheets_formula,
-        "excel": process_excel_formula,
-        "multi-cursors": process_text_to_json_multicursors
-    }
-
-    print(f"📩 Received question: {question}")  
-    print(f"🔍 Checking for task match...")  
-
-    # **Task Groups with Multi-Keyword Matching**
-    task_groups = {
-        extract_csv_from_zip: {"zip", "csv", "answer column"},
-        count_days_in_range: {"date range", "how many"},
-        sort_json_array: {"sort", "json", "array"},
-        process_zip_for_symbol_sum: {"encodings", "UTF-8", "CP1252"}  # Needs at least 2 matches
-    }
-
-    # **File Processing**
-    file_path = None
-    if file:
-        file_path = handle_file_processing(file)
-
-    # **1️⃣ Exact Single-Keyword Matching (Stops if Found)**
-    for keyword, function in TASK_MAPPING.items():
-        if keyword in question.lower():
-            print(f"✅ Exact match found: {keyword}, calling {function.__name__}")
-
-            sig = inspect.signature(function)
-            result = function(question, file_path) if "file_path" in sig.parameters else function(question)
-            
-            print(f"🔍 Raw result from function: {result}")  
-            return result  # ⛔ STOP: Found match, no further checks
-
-    # **2️⃣ Multi-Keyword Matching (At Least 2, Stops if Found)**
-    for function, keywords in task_groups.items():
-        matched_keywords = [kw for kw in keywords if kw in question.lower()]
-        if len(matched_keywords) >= 2:
-            print(f"✅ Multi-keyword match ({matched_keywords}), calling {function.__name__}")
-            
-            sig = inspect.signature(function)
-            result = function(question, file_path) if "file_path" in sig.parameters else function(question)
-            
-            print(f"🔍 Raw result from function: {result}")  
-            return result  # ⛔ STOP: Found match, no further checks
-
-    # **3️⃣ Embeddings-Based Fallback (Only Runs If No Exact or Multi-Keyword Match)**
-    task_descriptions = {  
-        "sort_json_array": "Sort a JSON array of objects based on a specific field.",
-        "extract_csv_from_zip": "Extract a CSV file from a ZIP archive.",
-        "count_days_in_range": "Count how many times a specific weekday appears in a given date range.",
-        "process_text_to_json_multicursors": "Download the text file and use multi-cursors and convert it into a single JSON object, where key=value pairs are converted into {key: value, key: value, ...}. What's the result when you paste the JSON at tools-in-data-science.pages.dev/jsonhash and click the Hash button?",
-    }
-
-    question_embedding = get_embedding(question)
-    max_score = 0
-    best_match = None
-
-    for task_name, desc in task_descriptions.items():
-        desc_embedding = get_embedding(desc)
-        similarity = sum(a * b for a, b in zip(question_embedding, desc_embedding))  # Dot product similarity
-
-        if similarity > max_score:
-            max_score = similarity
-            best_match = task_name
-
-    if max_score > 0.85:  # Only if similarity is high
-        print(f"✅ Embeddings match found ({max_score}), calling {best_match}")
-        function = globals()[best_match]
-
-        sig = inspect.signature(function)
-        result = function(question, file_path) if "file_path" in sig.parameters else function(question)
-        
-        print(f"🔍 Raw result from function: {result}")  
-        return result  
-
-    return {"error": "No matching task found."}  # ❌ No match found
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# def handle_task(question: str, file: Optional[UploadFile] = None):
-#     TASK_MAPPING = {
-#         "sha256sum": process_readme_task,  
-#         "https": handle_http_get,
-#         "google sheets": process_google_sheets_formula,
-#         "excel": process_excel_formula,
-#         # Add more tasks here
-#     }
-
-#     print(f"📩 Received question: {question}")  
-#     print(f"🔍 Checking for task match...")  
-
-#     # Task Groups (Adding `extract_csv_from_zip` dynamically)
-#     task_groups = {
-#         extract_csv_from_zip: {"zip", "csv", "answer column"},
-#         count_days_in_range: {"date range", "how many"},
-#     }
-
-#     # Dynamically update TASK_MAPPING
-#     for function, keywords in task_groups.items():
-#         TASK_MAPPING.update({keyword: function for keyword in keywords})
-
-#     # Check if a file is needed for any matching task
-#     file_path = None
-#     if file:
-#         file_path = handle_file_processing(file)  # ✅ Save file before calling any task
-
-#     # Find the first matching function
-#     for keyword, function in TASK_MAPPING.items():
-#         print(f"🔎 Checking keyword: {keyword} in question...")
-#         if keyword in question.lower():
-#             print(f"✅ Match found: {keyword}, calling {function.__name__}")
-
-#             # **Dynamically Check if Function Needs `file_path`**
-#             sig = inspect.signature(function)
-#             if "file_path" in sig.parameters:
-#                 result = function(question, file_path)  # ✅ Pass file if needed
-#             else:
-#                 result = function(question)  # ✅ Call without file if not needed
-
-#             print(f"🔍 Raw result from function: {result}")  
-
-#             # Ensure result is formatted correctly
-#             if isinstance(result, dict):
-#                 result = result.get("answer", "Error: Unexpected format")  
-
-#             return result  # ✅ Returns the proper response
-
-#     return {"error": "No matching task found."}  # ❌ No match found
-
-
-
-
-
-# def handle_task(question: str, file: Optional[UploadFile] = None):
-#     TASK_MAPPING = {
-#         "sha256sum": process_readme_task,
-#         "https": handle_http_get,
-#         "google sheets": process_google_sheets_formula,
-#         "excel": process_excel_formula,
-#     }
-
-#     print(f"📩 Received question: {question}")  # Debugging
-#     print(f"🔍 Checking for task match...")  
-
-#     task_groups = {
-#         extract_csv_from_zip: {"zip", "csv", "answer column"},
-#     }
-
-#     # Only process file if needed
-#     file_path = None
-#     if file:
-#     # and any(keyword in question.lower() for keywords in task_groups.values() for keyword in keywords):
-#         file_path = handle_file_processing(file)
-
-
-#     # Dynamically update TASK_MAPPING
-#     for function, keywords in task_groups.items():
-#         TASK_MAPPING.update({keyword: function for keyword in keywords})
-
-#     for keyword, function in TASK_MAPPING.items():
-#         print(f"🔎 Checking keyword: {keyword} in question...")
-#         if keyword in question.lower():
-#             print(f"✅ Match found: {keyword}, calling {function.__name__}")
-#             result = function(question, file_path)
-#             print(f"🔍 Raw result from function: {result}")  # Debugging
-
-
-#             if function in (task_groups or TASK_MAPPING):
-#                 result = function(question, file_path)  # Pass file path to the task
-#             else:
-#                 result = function(question)  # For functions that don't need file processing
-#             # FIX: Ensure result is a string, not a nested dictionary
-#             if isinstance(result, dict):  
-#                 result = result.get("answer", "Error: Unexpected format")  
-
-#             return result  # ✅ Returns a properly formatted response
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# def handle_task(question: str, file: Optional[UploadFile] = None) -> str:
-#     TASK_MAPPING = {
-#         "sha256sum": process_readme_task,
-#         "https": handle_http_get,
-#         # "download": handle_file_processing,
-#         "google sheets": process_google_sheets_formula,
-#         "excel": process_excel_formula,
-#         # "value in answer column of zip file": extract_csv_from_zip,
-#     }
-
-#     print(f"📩 Received question: {question}")  # Debugging
-#     print(f"🔍 Checking for task match...")  
-
-#     task_groups = {
-#     extract_csv_from_zip: {"zip", "csv", "answer column"},
-# }
-#     file_path = handle_file_processing(file) if file else None
-#     # Dynamically update TASK_MAPPING
-#     for function, keywords in task_groups.items():
-#         TASK_MAPPING.update({keyword: function for keyword in keywords})
-
-
-
-
-
-
-#     for keyword, function in TASK_MAPPING.items():
-#         print(f"🔎 Checking keyword: {keyword} in question...")
-#         if keyword in question.lower():
-#             print(f"✅ Match found: {keyword}, calling {function.__name__}")
-#             return function(question, file_path)
-
-#     print("❌ No matching task found.")
-#     return json.dumps({"answer": "Question type not recognized."})
-# def handle_task(question: str, file: Optional[UploadFile] = None) -> str:
-#     print(f"📩 Received question: {question}")  # Debugging: Print received question
-#     print(f"📂 Received file: {file.filename if file else 'No file provided'}")  # Debugging: Check file
-
-#     TASK_MAPPING = {
-#         # ASSIGNMENT 1
-#         # Question 2
-#         "https": handle_http_get,
-#         "download": handle_file_processing,
-#         # Question 3
-#          "sha256sum": process_readme_task,
-#     }
-#     print(f"🔍 Matching task for question: {question}")  # Debugging
-
-#     for keyword, function in TASK_MAPPING.items():
-#         if keyword in question.lower():
-#             return function(question, file)
-
-#     return "Question type not recognized."
-
 # Question 2
 def handle_http_get(question: str, file: Optional[UploadFile] = None) -> str:
     # Extract URL using regex
@@ -642,32 +181,6 @@ def handle_file_processing(file: UploadFile) -> str:
 
     print(f"📦 File saved at {file_path}")
     return file_path  # Return the saved file path
-
-# def handle_file_processing(file: UploadFile):
-#     """Saves the uploaded file and returns the path in a cross-platform way."""
-#     if not file:
-#         print("📂 No file uploaded, proceeding without file.")
-#         return None
-
-#     temp_dir = tempfile.gettempdir()  # Get the system temp directory
-#     temp_path = os.path.join(temp_dir, file.filename)  # Cross-platform path
-
-#     with open(temp_path, "wb") as f:
-#         f.write(file.file.read())
-
-#     print(f"📦 File saved at {temp_path}")
-#     return temp_path  # Just return the file path, no processing
-
-
-
-# def handle_file_processing(question: str, file: Optional[UploadFile] = None) -> str:
-#     if file:
-#         return f"{question} (File: {file.filename})"  # Attach file name to question
-#     return question
-# # def handle_file_processing(question: str, file: Optional[UploadFile] = None) -> str:
-# #     if file:
-# #         return f"Processing file: {file.filename}"
-# #     return "No file provided."
 
 
 # Question 3
@@ -756,146 +269,10 @@ def process_readme_task(question: str, file_path: str) -> dict:
 
 
 
-# def process_readme_task(question: str, file: UploadFile, file_path: str) -> dict:
-    """Formats any uploaded Markdown file using Prettier and computes its SHA-256 hash."""
-    try:
-        print("🚀 process_readme_task() is running!")
-
-        if not file:
-            return {"error": "No file provided."}
-
-        # Ensure the file path is valid
-        if not file_path:
-            return {"error": "File path is missing."}
-
-        file_location = os.path.abspath(file_path)
-
-        print(f"📁 Using file path: {file_location}")
-
-        # Ensure npx is installed
-        if not check_npx():
-            print("⚠ npx not found! Trying to install...")
-            if not install_npx():
-                return {"error": "❌ npx is not installed and installation failed."}
-
-        # Install dependencies if needed
-        install_result = install_npx_and_prettier()
-        if "Error" in install_result:
-            return {"error": install_result}
-
-        # Run Prettier dynamically on the uploaded file
-        npx_path = shutil.which("npx")  # Get absolute path to npx
-        if not npx_path:
-            return {"error": "❌ npx is not installed or not in PATH."}
-
-        prettier_command = [npx_path, "-y", "prettier@3.4.2", "--write", file_location]
-        prettier_result = subprocess.run(prettier_command, capture_output=True, text=True)
-
-        if prettier_result.returncode != 0:
-            print(f"❌ Prettier failed: {prettier_result.stderr}")
-            return {"error": "Prettier formatting failed."}
-
-        print("✅ Prettier formatting successful")
-
-        # Compute SHA-256 hash dynamically based on OS
-        try:
-            if os.name == "nt":  # Windows
-                print("🟢 Running certutil for hashing on Windows...")
-                hash_result = subprocess.run(["certutil", "-hashfile", file_location, "SHA256"],
-                                             capture_output=True, text=True, check=True)
-                hash_lines = hash_result.stdout.splitlines()
-                hash_output = hash_lines[1].strip() if len(hash_lines) > 1 else "❌ Hash extraction failed."
-            else:  # Linux/macOS
-                print("🟢 Running sha256sum for hashing on Linux/macOS...")
-                hash_result = subprocess.run(["sha256sum", file_location], capture_output=True, text=True, check=True)
-                hash_output = hash_result.stdout.split()[0]
-
-            print(f"🔢 SHA256 Hash: {hash_output}")
-            return {"answer": hash_output}  # ✅ Ensures correct response format
-
-        except subprocess.CalledProcessError as e:
-            print(f"❌ Hashing failed: {e}")
-            return {"error": "SHA256 hashing failed."}
-
-    except Exception as e:
-        print(f"🔥 Unexpected Error: {traceback.format_exc()}")
-        return {"error": f"Unexpected error: {str(e)}"}
-
-
-# def process_readme_task(question: str, file: UploadFile) -> dict:
-#     """Formats any uploaded Markdown file using Prettier and computes its SHA-256 hash."""
-#     try:
-#         print("🚀 process_readme_task() is running!")
-
-#         if not file:
-#             return {"error": "No file provided."}
-#         file_location = os.path.abspath(f"./{file.filename}")
-#         with open(file_location, "wb") as f:
-#             file.file.seek(0)  # Reset file pointer
-#             f.write(file.file.read())
-
-#         time.sleep(1)  # Ensure file is properly saved before processing
-#         print(f"📁 File saved as: {file_location}")
-
-#         # Ensure npx is installed
-#         if not check_npx():
-#             print("⚠ npx not found! Trying to install...")
-#             if not install_npx():
-#                 return {"error": "❌ npx is not installed and installation failed."}
-
-#         # Install dependencies if needed
-#         install_result = install_npx_and_prettier()
-#         if "Error" in install_result:
-#             return {"error": install_result}
-
-#         # Run Prettier dynamically on the uploaded file
-#         npx_path = shutil.which("npx")  # Get absolute path to npx
-#         if not npx_path:
-#             return {"error": "❌ npx is not installed or not in PATH."}
-
-#         prettier_command = [npx_path, "-y", "prettier@3.4.2", "--write", file_location]
-#         prettier_result = subprocess.run(prettier_command, capture_output=True, text=True)
-
-#         if prettier_result.returncode != 0:
-#             print(f"❌ Prettier failed: {prettier_result.stderr}")
-#             return {"error": "Prettier formatting failed."}
-
-#         print("✅ Prettier formatting successful")
-
-#         # Compute SHA-256 hash dynamically based on OS
-#         try:
-#             if os.name == "nt":  # Windows
-#                 print("🟢 Running certutil for hashing on Windows...")
-#                 hash_result = subprocess.run(["certutil", "-hashfile", file_location, "SHA256"],
-#                                              capture_output=True, text=True, check=True)
-#                 hash_lines = hash_result.stdout.splitlines()
-#                 hash_output = hash_lines[1].strip() if len(hash_lines) > 1 else "❌ Hash extraction failed."
-#             else:  # Linux/macOS
-#                 print("🟢 Running sha256sum for hashing on Linux/macOS...")
-#                 hash_result = subprocess.run(["sha256sum", file_location], capture_output=True, text=True, check=True)
-#                 hash_output = hash_result.stdout.split()[0]
-
-#             print(f"🔢 SHA256 Hash: {hash_output}")
-#             return {"answer": hash_output}
-
-#         except subprocess.CalledProcessError as e:
-#             print(f"❌ Hashing failed: {e}")
-#             return {"error": "SHA256 hashing failed."}
-
-#     except Exception as e:
-#         print(f"🔥 Unexpected Error: {traceback.format_exc()}")
-#         return {"error": f"Unexpected error: {str(e)}"}
-
-
 # Question 4
 import re
 
 def process_google_sheets_formula(question, file=None):
-    """
-    Parses a question string and computes the equivalent of:
-    =SUM(ARRAY_CONSTRAIN(SEQUENCE(cols, cols, start, step), 1, count))
-    """
-
     try:
         # Extract numerical values using regex
         match = re.search(r'cols\s*=\s*(\d+),\s*start\s*=\s*(\d+),\s*step\s*=\s*(\d+),\s*count\s*=\s*(\d+)', question)
@@ -923,15 +300,7 @@ def process_google_sheets_formula(question, file=None):
 
 # Question 5
 import numpy as np
-
 def process_excel_formula(question, file=None):
-    """
-    Process a dynamically generated Excel formula equivalent in Python.
-
-    The expected format of the question:
-    In Excel, the formula `=SUM(TAKE(SORTBY({values}, {sort_keys}), 1, take_count))` computes a sum.
-    Compute the equivalent result for: values = [...], sort_keys = [...], take_count = N.
-    """
     try:
         # Extract values using regex
         match = re.search(
@@ -967,8 +336,6 @@ import re
 from datetime import datetime, timedelta
 
 def count_days_in_range(question: str) -> dict:
-    """Extracts the date range and weekday from a question and counts occurrences of that weekday."""
-
     # Extract the start date and end date using regex
     match = re.search(r"(\d{4}-\d{2}-\d{2}) to (\d{4}-\d{2}-\d{2})", question)
     if not match:
@@ -1010,10 +377,6 @@ import pandas as pd
 import tempfile
 
 def extract_csv_from_zip(question, file_path):
-    """
-    Extract a CSV file from a ZIP archive and return the first value from the 'answer' column.
-    """
-
     print(f"📩 Processing ZIP file: {file_path}")  # Debugging log
 
     if not file_path.endswith('.zip'):
@@ -1053,57 +416,6 @@ def extract_csv_from_zip(question, file_path):
         except Exception as e:
             print(f"❌ Exception: {str(e)}")
             return {"answer": f"Error: {str(e)}"}
-
-# import os
-# import zipfile
-# import pandas as pd
-# import tempfile
-# import shutil
-
-# def extract_csv_from_zip(question, file_path):
-#     """
-#     Extract a CSV file from a ZIP archive and return the first value from the 'answer' column.
-#     """
-
-#     print(f"📩 Processing ZIP file: {file_path}")  # Debugging log
-
-#     if not file_path.endswith('.zip'):
-#         print("❌ Error: File is not a ZIP archive")
-#         return {"answer": "Error: Uploaded file is not a ZIP archive."}
-
-#     with tempfile.TemporaryDirectory() as temp_dir:  # Temporary directory for extracted files
-#         try:
-#             # Extract files from ZIP
-#             with zipfile.ZipFile(file_path, 'r') as zip_ref:
-#                 csv_files = [f for f in zip_ref.namelist() if f.endswith('.csv')]
-#                 if not csv_files:
-#                     print("❌ Error: No CSV file found in ZIP")
-#                     return {"answer": "Error: No CSV file found in the ZIP archive."}
-
-#                 # Extract first CSV file
-#                 first_csv = csv_files[0]
-#                 extracted_path = zip_ref.extract(first_csv, temp_dir)
-
-#             print(f"📖 Reading CSV file: {extracted_path}")
-
-#             # Read CSV file
-#             df = pd.read_csv(extracted_path)
-#             print(f"📊 CSV columns: {df.columns.tolist()}")
-
-#             if "answer" not in df.columns:
-#                 print("❌ Error: 'answer' column missing")
-#                 return {"answer": "Error: Column 'answer' not found in the CSV file."}
-
-#             # Get the first value in the 'answer' column
-#             answer_value = df["answer"].iloc[0]
-#             print(f"✅ Extracted Answer: {answer_value}")
-
-#             return {"answer": str(answer_value)}
-
-#         except Exception as e:
-#             print(f"❌ Exception: {str(e)}")
-#             return {"answer": f"Error: {str(e)}"}
-
 
 
 
@@ -1159,55 +471,6 @@ def process_text_to_json_multicursors(question, file_path):
     return {"answer": json_hash}
 
 
-
-
-
-# import json
-# import requests
-# import os
-
-# def process_text_to_json_multicursors(question, file_path):
-#     filename = os.path.basename(file_path)
-
-#     # Read file contents
-#     try:
-#         with open(file_path, "r", encoding="utf-8") as file:
-#             lines = file.readlines()
-#     except FileNotFoundError:
-#         return {"error": f"File {filename} not found."}
-
-#     # Convert key=value lines into a dictionary
-#     json_obj = {}
-#     for line in lines:
-#         if "=" in line:
-#             key, value = line.strip().split("=", 1)
-#             json_obj[key.strip()] = value.strip()
-
-#     json_str = json.dumps(json_obj, separators=(",", ":"))
-
-#     # Send request to hash API
-#     try:
-#         url = f"https://tools-in-data-science.pages.dev/jsonhash?json={json_str}"
-#         response = requests.get(url)
-#         response.raise_for_status()  # Ensure the request didn't fail
-
-#         # ✅ Debugging: Print response before parsing
-#         print("Raw API Response:", response.text)
-
-#         # Parse JSON only if response is not empty
-#         if response.text.strip():
-#             hash_result = response.json().get("hash", "Error: Hash key not found")
-#         else:
-#             hash_result = "Error: Empty response from server"
-
-#     except requests.RequestException as e:
-#         return {"error": f"Failed to get hash: {str(e)}"}
-#     except json.JSONDecodeError:
-#         return {"error": "Failed to parse JSON from response"}
-
-#     return {"filename": filename, "json": json_str, "hash": hash_result}
-
-
 # Question 12
 import os
 import zipfile
@@ -1216,10 +479,6 @@ import pandas as pd
 import chardet
 
 def process_zip_for_symbol_sum(question, file_path):
-    """
-    Extracts files from a ZIP archive and calculates the sum of values for symbols (‘, ˆ, š).
-    """
-
     print(f"📩 Processing ZIP file: {file_path}")  # Debug log
 
     if not file_path.endswith('.zip'):
@@ -1298,20 +557,6 @@ def extract_datetime(text):
     return None
 
 def calculate_filtered_size(question, file_path):
-    """
-    Extracts the ZIP file, lists all files with their sizes and modification dates, 
-    and calculates the total size of files meeting the specified criteria:
-    - File size >= (extracted from the question)
-    - Last modified on or after (extracted from the question)
-
-    Parameters:
-    - question (str): The task description containing the dynamic parameters.
-    - file_path (str): Path to the ZIP file.
-
-    Returns:
-    - str: Total size of the filtered files in bytes.
-    """
-    
     # **Extract parameters dynamically from the question**
     min_size = extract_number(question)  # Extract file size
     min_date = extract_datetime(question)  # Extract date-time
@@ -1341,111 +586,11 @@ def calculate_filtered_size(question, file_path):
     return str(total_size)
 
 
-# def calculate_filtered_size(question, file_path):
-#     """
-#     Extracts the ZIP file, lists all files with their sizes and modification dates, 
-#     and calculates the total size of files meeting the specified criteria:
-#     - File size >= 4346 bytes
-#     - Last modified on or after "Wed, 26 Jan, 2005, 6:23 am IST"
-    
-#     Parameters:
-#     - question (str): The task description (not used in logic, included for consistency).
-#     - file_path (str): Path to the ZIP file.
-
-#     Returns:
-#     - str: Total size of the filtered files in bytes.
-#     """
-
-#     # Define the minimum file size in bytes
-#     min_size = 4346  
-
-#     # Define the minimum modification date as per the question
-#     min_date_str = "Wed, 26 Jan, 2005, 6:23 am IST"
-#     date_format = "%a, %d %b, %Y, %I:%M %p IST"
-
-#     try:
-#         # Convert the string to a datetime object
-#         min_date = datetime.strptime(min_date_str, date_format)
-#     except ValueError:
-#         raise ValueError(f"Invalid date format: {min_date_str}. Expected format: '{date_format}'")
-
-#     # Create a temporary directory to extract files
-#     extract_dir = "extracted_files"
-#     os.makedirs(extract_dir, exist_ok=True)
-
-#     # Extract the ZIP file
-#     with zipfile.ZipFile(file_path, 'r') as zip_ref:
-#         zip_ref.extractall(extract_dir)
-
-#     # Initialize total size
-#     total_size = 0
-
-#     # List all extracted files
-#     for root, _, files in os.walk(extract_dir):
-#         for file in files:
-#             file_path = os.path.join(root, file)
-
-#             # Get file size
-#             file_size = os.path.getsize(file_path)
-
-#             # Get file modification time
-#             mod_time = os.path.getmtime(file_path)
-#             file_mod_date = datetime.fromtimestamp(mod_time)
-
-#             # Check if the file meets the criteria
-#             if file_size >= min_size and file_mod_date >= min_date:
-#                 total_size += file_size
-
-#     # Cleanup extracted files (optional)
-#     # shutil.rmtree(extract_dir)
-
-#     return str(total_size)
-
-
-
-
-# def calculate_filtered_size(zip_path, min_size, min_date):
-    extract_folder = zip_path.replace(".zip", "")
-
-    # Ensure extraction preserves timestamps
-    if os.name == "nt":  # Windows: Use 7-Zip
-        subprocess.run(["7z", "x", zip_path, f"-o{extract_folder}", "-y"], check=True)
-    else:  # Linux/macOS: Use unzip
-        subprocess.run(["unzip", "-o", zip_path, "-d", extract_folder], check=True)
-
-    total_size = 0
-    min_date_obj = datetime.strptime(min_date, "%a, %d %b, %Y, %I:%M %p %Z")
-
-    # List extracted files and filter by conditions
-    for file in os.listdir(extract_folder):
-        file_path = os.path.join(extract_folder, file)
-        if os.path.isfile(file_path):
-            file_size = os.path.getsize(file_path)
-            mod_time = datetime.fromtimestamp(os.path.getmtime(file_path))
-
-            # Apply filters
-            if file_size >= min_size and mod_time >= min_date_obj:
-                total_size += file_size
-
-    return {"total_size": total_size}
-
 
 # Question 17
 import os
 import zipfile
 def count_different_lines(question, file_path):
-    """
-    Extracts the ZIP file and compares two nearly identical `.txt` files to count 
-    how many lines are different.
-
-    Parameters:
-    - question (str): The task description (used to extract dynamic parameters).
-    - file_path (str): Path to the ZIP file.
-
-    Returns:
-    - str: Number of differing lines between the two text files.
-    """
-
     # Create a temporary directory to extract files
     extract_dir = "extracted_files"
     os.makedirs(extract_dir, exist_ok=True)
@@ -1657,11 +802,6 @@ from bs4 import BeautifulSoup
 import re
 
 def fetch_wikipedia_outline(question):
-    """
-    Extracts country name dynamically from the question, fetches Wikipedia page,
-    extracts headings (H1-H6), and returns a Markdown outline.
-    """
-
     # Extract country name using regex (assumes "for [Country]" pattern)
     match = re.search(r"for (\w[\w\s]+)", question, re.IGNORECASE)
     if not match:
