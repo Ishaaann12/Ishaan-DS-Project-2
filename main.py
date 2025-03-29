@@ -57,7 +57,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from tasks import handle_task  # Import dynamic task handler
 from typing import Optional
-from tasks import handle_file_processing
+from utils import handle_file_processing  # Import file processing utility
+from tasks import handle_http_get  # Import HTTP GET request handler
+import tasks
 app = FastAPI()
 
 app.add_middleware(

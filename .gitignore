@@ -3,4 +3,4 @@ __pycache__/
 *.log
 .env
 codesafe.txt
-GA1.py
+# GA1.py
