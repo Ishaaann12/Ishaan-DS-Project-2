@@ -11,5 +11,6 @@
             "src": "/api/(.*)",
             "dest": "api/main.py"
         }
-    ]
+    ],
+    "installCommand": "pip install --no-cache-dir -r requirements.txt && rm -rf venv"
 }
