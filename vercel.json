@@ -1,17 +1,17 @@
 {
-  "version": 2,
-  "builds": [
+    "version": 2,
+    "builds": [
       {
-          "src": "api/main.py",
-          "use": "@vercel/python",
-          "config": { "runtime": "python3.11" }
+        "src": "api/main.py",
+        "use": "@vercel/python"
       }
-  ],
-  "routes": [
+    ],
+    "routes": [
       {
-          "src": "/api/.*",
-          "dest": "api/main.py"
+        "src": "/api/(.*)",
+        "dest": "api/main.py"
       }
-  ]
-}
-
+    ],
+    "buildCommand": "pip install -r requirements.txt && pip install pandas"
+  }
+  

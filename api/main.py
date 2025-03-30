@@ -1,11 +1,17 @@
+import sys
+import os
 
+# ✅ Add the root directory (Project-2/) to Python's import path
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+
+from tasks.tasks import handle_task  # ✅ Ensure this import works
 from fastapi import FastAPI, Form, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from tasks import handle_task  # Import dynamic task handler
 from typing import Optional
-from utils import handle_file_processing  # Import file processing utility
-from tasks import handle_http_get  # Import HTTP GET request handler
+from utils.file_process import handle_file_processing  # Import file processing utility
+from tasks.tasks import handle_task # Import HTTP GET request handler
 import tasks
 app = FastAPI()
 
@@ -16,6 +22,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+
 
 @app.post("/api/")
 async def answer_question(
@@ -41,3 +50,11 @@ async def run_question(
     answer = handle_task(question, file)
 
     return JSONResponse(content={"answer": answer})
+
+
+
+
+
+@app.get("/api/health")
+def health_check():
+    return {"status": "OK"}

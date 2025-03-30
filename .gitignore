@@ -4,3 +4,4 @@ __pycache__/
 .env
 codesafe.txt
 # GA1.py
+.vercel
