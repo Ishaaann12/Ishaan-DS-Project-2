@@ -7,3 +7,4 @@ __pycache__
 data
 .vercel/output/
 node_modules/
+codesafe.txt
