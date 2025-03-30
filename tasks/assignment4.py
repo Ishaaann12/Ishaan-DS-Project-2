@@ -261,8 +261,9 @@ def search_hn_latest(question):
 
 # Question 9
 import re
+import pdfplumber
 import pandas as pd
-import camelot
+
 def calculate_total_marks(question, file_path):
     """Extracts parameters from the question and calculates total marks from a PDF file."""
     
@@ -271,7 +272,6 @@ def calculate_total_marks(question, file_path):
 
     # 🔍 Updated regex (more flexible)
     pattern = r"total\s+(\w+)\s+marks.*?(\d+)\s+(?:or\s+)?(more|less|at\s+least|at\s+most)?\s*marks\s+in\s+(\w+).*?groups\s+(\d+)-(\d+)"
-
     match = re.search(pattern, question, re.IGNORECASE)
 
     if not match:
@@ -288,41 +288,44 @@ def calculate_total_marks(question, file_path):
 
     print(f"✅ Extracted Parameters: {subject}, {min_marks} ({comparison}), {filter_subject}, Groups {group_start}-{group_end}")
 
-        # ✅ Convert groups to PDF page numbers dynamically
-    page_start = group_start  # Assuming 1 group = 1 page
-    page_end = group_end
-    pages = f"{page_start}-{page_end}"
-
-    print(f"✅ Extracted Parameters: {subject}, {min_marks} ({comparison}), {filter_subject}, Pages {pages}")
-
     try:
-        # ✅ Extract tables from the relevant pages
-        tables = camelot.read_pdf(file_path, pages=pages, flavor='stream')
+        extracted_data = []
+        
+        # ✅ Extract tables using `pdfplumber`
+        with pdfplumber.open(file_path) as pdf:
+            for page_num in range(group_start, group_end + 1):  # Loop through required pages
+                if page_num > len(pdf.pages):  # Prevent index error
+                    break
+                page = pdf.pages[page_num - 1]
+                tables = page.extract_table()  # Extract table from the page
 
-        if tables.n == 0:
+                if tables:
+                    extracted_data.extend(tables)
+
+        if not extracted_data:
             return {"error": "No tables found in the PDF"}
 
-        # ✅ Combine all extracted tables
-        df_list = [table.df for table in tables]
-        combined_df = pd.concat(df_list, ignore_index=True)
+        # ✅ Convert extracted table data into a DataFrame
+        df = pd.DataFrame(extracted_data)
 
         # ✅ Identify the row containing column headers dynamically
-        header_row_idx = combined_df[combined_df.iloc[:, 0] == "Maths"].index[0]
-        data = combined_df.iloc[header_row_idx + 1:].reset_index(drop=True)
+        header_row_idx = df[df.iloc[:, 0].str.contains("Maths", na=False)].index[0]
+        df = df.iloc[header_row_idx:].reset_index(drop=True)
 
-        # ✅ Rename columns based on extracted header row
-        data.columns = ["Maths", "Physics", "English", "Economics", "Biology"]  # Adjust as needed
+        # ✅ Rename columns based on detected headers
+        df.columns = df.iloc[0]  # First row is header
+        df = df[1:].reset_index(drop=True)
 
         # ✅ Convert relevant columns to numeric
-        data[subject] = pd.to_numeric(data[subject], errors="coerce")
-        data[filter_subject] = pd.to_numeric(data[filter_subject], errors="coerce")
-        data.dropna(subset=[subject, filter_subject], inplace=True)
+        df[subject] = pd.to_numeric(df[subject], errors="coerce")
+        df[filter_subject] = pd.to_numeric(df[filter_subject], errors="coerce")
+        df.dropna(subset=[subject, filter_subject], inplace=True)
 
         # ✅ Apply filtering based on the extracted parameters
-        if comparison in ["more", "at least", ]:
-            filtered_data = data[data[filter_subject] >= min_marks]
+        if comparison in ["more", "at least"]:
+            filtered_data = df[df[filter_subject] >= min_marks]
         else:  # "less" or "at most"
-            filtered_data = data[data[filter_subject] <= min_marks]
+            filtered_data = df[df[filter_subject] <= min_marks]
 
         # ✅ Calculate total Maths marks
         total_marks = filtered_data[subject].sum()
@@ -331,3 +334,75 @@ def calculate_total_marks(question, file_path):
 
     except Exception as e:
         return {"error": str(e)}
+
+# import re
+# import pandas as pd
+# import camelot
+# def calculate_total_marks(question, file_path):
+#     """Extracts parameters from the question and calculates total marks from a PDF file."""
+    
+#     print(f"📌 Received Question: {repr(question)}")  # Debugging print
+#     print(f"🔎 Words in Question: {question.split()}")  # Word-by-word check
+
+#     # 🔍 Updated regex (more flexible)
+#     pattern = r"total\s+(\w+)\s+marks.*?(\d+)\s+(?:or\s+)?(more|less|at\s+least|at\s+most)?\s*marks\s+in\s+(\w+).*?groups\s+(\d+)-(\d+)"
+
+#     match = re.search(pattern, question, re.IGNORECASE)
+
+#     if not match:
+#         print("❌ Regex match failed! (Possible extra spaces or incorrect format)")
+#         return {"error": "Invalid question format"}
+
+#     # Extract parameters
+#     subject = match.group(1).capitalize()    # e.g., "Maths"
+#     min_marks = int(match.group(2))          # e.g., 10
+#     comparison = match.group(3) if match.group(3) else "more"  # Default to "more"
+#     filter_subject = match.group(4).capitalize()  # e.g., "Biology"
+#     group_start = int(match.group(5))        # e.g., 59
+#     group_end = int(match.group(6))          # e.g., 83
+
+#     print(f"✅ Extracted Parameters: {subject}, {min_marks} ({comparison}), {filter_subject}, Groups {group_start}-{group_end}")
+
+#         # ✅ Convert groups to PDF page numbers dynamically
+#     page_start = group_start  # Assuming 1 group = 1 page
+#     page_end = group_end
+#     pages = f"{page_start}-{page_end}"
+
+#     print(f"✅ Extracted Parameters: {subject}, {min_marks} ({comparison}), {filter_subject}, Pages {pages}")
+
+#     try:
+#         # ✅ Extract tables from the relevant pages
+#         tables = camelot.read_pdf(file_path, pages=pages, flavor='stream')
+
+#         if tables.n == 0:
+#             return {"error": "No tables found in the PDF"}
+
+#         # ✅ Combine all extracted tables
+#         df_list = [table.df for table in tables]
+#         combined_df = pd.concat(df_list, ignore_index=True)
+
+#         # ✅ Identify the row containing column headers dynamically
+#         header_row_idx = combined_df[combined_df.iloc[:, 0] == "Maths"].index[0]
+#         data = combined_df.iloc[header_row_idx + 1:].reset_index(drop=True)
+
+#         # ✅ Rename columns based on extracted header row
+#         data.columns = ["Maths", "Physics", "English", "Economics", "Biology"]  # Adjust as needed
+
+#         # ✅ Convert relevant columns to numeric
+#         data[subject] = pd.to_numeric(data[subject], errors="coerce")
+#         data[filter_subject] = pd.to_numeric(data[filter_subject], errors="coerce")
+#         data.dropna(subset=[subject, filter_subject], inplace=True)
+
+#         # ✅ Apply filtering based on the extracted parameters
+#         if comparison in ["more", "at least", ]:
+#             filtered_data = data[data[filter_subject] >= min_marks]
+#         else:  # "less" or "at most"
+#             filtered_data = data[data[filter_subject] <= min_marks]
+
+#         # ✅ Calculate total Maths marks
+#         total_marks = filtered_data[subject].sum()
+
+#         return str(int(total_marks))
+
+#     except Exception as e:
+#         return {"error": str(e)}
