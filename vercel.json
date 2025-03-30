@@ -15,7 +15,7 @@
     "installCommand": "pip install --no-cache-dir -r requirements.txt",
     "functions": {
         "api/main.py": {
-            "includeFiles": ["api/*"]
+            "includeFiles": "api/*"
         }
     }
 }
