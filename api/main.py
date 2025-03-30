@@ -58,3 +58,8 @@ async def run_question(
 @app.get("/api/health")
 def health_check():
     return {"status": "OK"}
+
+
+@app.get("/docs")
+def docs_redirect():
+    return {"message": "Swagger UI should be at /docs"}
