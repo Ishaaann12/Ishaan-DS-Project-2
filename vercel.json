@@ -12,5 +12,7 @@
             "src": "/api/(.*)",
             "dest": "api/main.py"
         }
-    ]
+    ],
+    "buildCommand": "pip install --no-cache-dir -r requirements.txt"
 }
+
