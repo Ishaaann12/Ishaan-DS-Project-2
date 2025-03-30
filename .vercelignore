@@ -4,3 +4,5 @@ __pycache__
 *.csv
 *.xlsx
 data
+.vercel/output/
+node_modules/
