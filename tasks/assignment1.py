@@ -12,7 +12,9 @@ from typing import Optional
 from dotenv import load_dotenv
 from fastapi import UploadFile
 from utils import handle_file_processing
-
+import zipfile
+import pandas as pd
+import tempfile
 # Question 2
 def handle_http_get(question: str, file: Optional[UploadFile] = None) -> str:
     # Extract URL using regex
@@ -45,7 +47,6 @@ import traceback
 import time
 from fastapi import UploadFile
 def check_npx():
-    """Verify if npx is installed and in PATH."""
     check_cmd = "where npx" if os.name == "nt" else "which npx"
     result = subprocess.run(check_cmd, shell=True, capture_output=True, text=True)
     return result.returncode == 0
@@ -120,7 +121,6 @@ def process_readme_task(question: str, file_path: str) -> dict:
 
 
 # Question 4
-import re
 def process_google_sheets_formula(question, file=None):
     """
     Parses a question string and computes the equivalent of:
@@ -153,7 +153,6 @@ def process_google_sheets_formula(question, file=None):
 
 
 # Question 5
-import numpy as np
 def process_excel_formula(question, file=None):
     """
     Process a dynamically generated Excel formula equivalent in Python.

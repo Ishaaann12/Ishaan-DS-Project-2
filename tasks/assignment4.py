@@ -1,7 +1,9 @@
 import requests
 from bs4 import BeautifulSoup
 import re
-
+import pandas as pd
+import datetime
+import pdfplumber
 
 # Question 3
 def fetch_wikipedia_outline(question):
@@ -33,10 +35,6 @@ def fetch_wikipedia_outline(question):
 
 
 # Question 4
-import requests
-import re
-import pandas as pd
-import datetime
 def get_weather_forecast(question: str):
     """
     Fetches the weather forecast description for a given city using BBC Weather Broker API.
@@ -99,19 +97,8 @@ def get_weather_forecast(question: str):
 
 
 # Question 5
-import re
-import requests
 def extract_query_params(question: str):
-    """
-    Extracts city, country, and bounding box parameter (min/max lat/lon) from the input question.
     
-    Parameters:
-        question (str): The natural language question asked by the user.
-
-    Returns:
-        dict: Extracted city, country, and bounding box parameter.
-    """
-    # Define mappings for possible bounding box terms
     bbox_mapping = {
         "minimum latitude": "min_lat",
         "maximum latitude": "max_lat",
@@ -140,15 +127,7 @@ def extract_query_params(question: str):
 
     return {"city": city, "country": country, "bbox_type": bbox_type}
 def using_nominatim_api(question: str):
-    """
-    Extracts parameters from the question and fetches the requested geospatial data.
-
-    Parameters:
-        question (str): The natural language question asked by the user.
-
-    Returns:
-        dict: JSON response containing the requested geospatial data.
-    """
+   
     params = extract_query_params(question)
     
     if "error" in params:
@@ -190,13 +169,10 @@ def using_nominatim_api(question: str):
 
 
 # Question 6
-import requests
-import re
-from bs4 import BeautifulSoup
 HN_SEARCH_URL = "https://hn.algolia.com/api/v1/search?query="
 HN_ITEM_URL = "https://news.ycombinator.com/item?id="
 def extract_min_max_points(question):
-    """Extract min/max point constraints from the question."""
+    
     min_points, max_points = None, None
 
     min_match = re.search(r"at least (\d+) points", question)
@@ -260,13 +236,7 @@ def search_hn_latest(question):
 
 
 # Question 9
-import re
-import pdfplumber
-import pandas as pd
-
 def calculate_total_marks(question, file_path):
-    """Extracts parameters from the question and calculates total marks from a PDF file."""
-    
     print(f"📌 Received Question: {repr(question)}")  # Debugging print
     print(f"🔎 Words in Question: {question.split()}")  # Word-by-word check
 
@@ -335,8 +305,7 @@ def calculate_total_marks(question, file_path):
     except Exception as e:
         return {"error": str(e)}
 
-# import re
-# import pandas as pd
+
 # import camelot
 # def calculate_total_marks(question, file_path):
 #     """Extracts parameters from the question and calculates total marks from a PDF file."""

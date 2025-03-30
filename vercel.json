@@ -1,11 +1,16 @@
 {
     "version": 2,
-    "installCommand": "pip install --no-cache-dir -r requirements.txt",
+    "builds": [
+        {
+            "src": "api/main.py",
+            "use": "@vercel/python"
+        }
+    ],
     "routes": [
         {
             "src": "/api/(.*)",
             "dest": "api/main.py"
         }
-    ]
+    ],
+    "installCommand": "pip install --no-cache-dir --disable-pip-version-check -r requirements.txt"
 }
-
