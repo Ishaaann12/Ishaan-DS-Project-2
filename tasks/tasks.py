@@ -167,5 +167,3 @@ def get_best_match_using_embeddings(normalized_question):
     return best_match if best_score > 0.75 else None
 
 
-
-
