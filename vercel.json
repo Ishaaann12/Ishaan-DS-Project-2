@@ -12,10 +12,5 @@
             "dest": "api/main.py"
         }
     ],
-    "installCommand": "pip install --no-cache-dir -r requirements.txt",
-    "functions": {
-        "api/main.py": {
-            "includeFiles": "api/*"
-        }
-    }
+    "installCommand": "pip install --no-cache-dir -r requirements.txt"
 }
