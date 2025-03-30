@@ -13,6 +13,5 @@
             "dest": "api/main.py"
         }
     ],
-    "installCommand": "pip install --no-cache-dir -r requirements.txt",
-    "excludeFiles": ["**/*.log", "**/*.csv", "**/*.png", "**/*.pdf", "tests/", "__pycache__/", "venv/", "*.bin"]
+    "installCommand": "pip install --no-cache-dir -r requirements.txt"
 }
