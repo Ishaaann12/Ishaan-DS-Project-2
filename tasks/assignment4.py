@@ -37,6 +37,7 @@ def fetch_wikipedia_outline(question):
 
 
 # Question 4
+from datetime import datetime
 def get_weather_forecast(question: str):
     """
     Fetches the weather forecast description for a given city using BBC Weather Broker API.
@@ -88,7 +89,7 @@ def get_weather_forecast(question: str):
         weather_descriptions.extend([s.strip() for s in split_descriptions if s.strip()])  # Clean and store
 
 # ✅ Step 2: Generate Date List (starting from today)
-    datelist = pd.date_range(datetime.today(), periods=len(weather_descriptions)).tolist()
+    datelist = pd.date_range(datetime.today().date(), periods=len(weather_descriptions)).tolist()
     datelist = [date.strftime('%Y-%m-%d') for date in datelist]  # Correct format
 
 # ✅ Step 3: Create JSON Dictionary

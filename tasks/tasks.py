@@ -68,7 +68,7 @@ task_groups = {
     "process_readme_task": {"sha256sum", "npx", " -y prettier"},
     "count_different_lines": {"zip", "same number of lines", "identical files"},
     "process_light_pixel_task": {"brightness", "number of pixels", "There is a mistake"},
-    "fetch_wikipedia_outline": {"URL", "API endpoint"},
+    "fetch_wikipedia_outline": {"URL", "API endpoint","Markdown outline that exposes an API"},
     "search_hn_latest": {"Hacker News", "latest post", "topic", "points"},
     "count_successful_requests": {"successful", "GET requests", "for pages"},
     "top_ip_data_usage": {"Across all requests", "bytes", "volume of downloads"},
