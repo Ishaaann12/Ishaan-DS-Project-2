@@ -44,10 +44,10 @@ from typing import Optional
 # Lazy Load Assignment Modules
 assignment_modules = {
     "assignment1": ["handle_http_get","process_readme_task","process_google_sheets_formula","process_excel_formula","count_days_in_range","extract_csv_from_zip","sort_json_array","process_text_to_json_multicursors","process_zip_for_symbol_sum","calculate_filtered_size","count_different_lines"],
-    "assignment2": "task_assignment2",
-    "assignment3": "task_assignment3",
-    "assignment4": "task_assignment4",
-    "assignment5": "task_assignment5",
+    "assignment2": ["process_light_pixel_task"],
+    "assignment3": ["task_assignment3"],
+    "assignment4": ["fetch_wikipedia_outline","get_weather_forecast","using_nominatim_api","search_hn_latest","calculate_total_marks"],
+    "assignment5": ["count_unique_students","count_successful_requests","top_ip_data_usage"]
 }
 
 TASK_MAPPING = {
