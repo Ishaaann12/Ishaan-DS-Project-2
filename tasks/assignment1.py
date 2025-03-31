@@ -439,7 +439,7 @@ def calculate_filtered_size(question, file_path):
 def count_different_lines(question, file_path):
 
     # Create a temporary directory to extract files
-    extract_dir = "extracted_files"
+    extract_dir = "/tmp/extracted_files"
     os.makedirs(extract_dir, exist_ok=True)
 
     # Extract ZIP file
