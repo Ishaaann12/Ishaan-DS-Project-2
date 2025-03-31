@@ -78,7 +78,7 @@ def is_valid_time(log_time, target_day, start_hour, end_hour):
 
 import gzip
 
-def count_successful_requests(question, gz_stream):
+def count_successful_requests(question, file_path):
     """
     Count successful GET requests from a .gz stream without storing it in memory.
     """
@@ -91,7 +91,7 @@ def count_successful_requests(question, gz_stream):
     MAX_LINES = 500000  # Stop processing after this many lines
 
     try:
-        for i, line in enumerate(gz_stream):
+        for i, line in enumerate(file_path):
             if i > MAX_LINES:
                 print("⚠️ File too large, stopping processing early")
                 break
