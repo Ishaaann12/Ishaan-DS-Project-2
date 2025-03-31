@@ -4,6 +4,8 @@ import re
 import pandas as pd
 import datetime
 import pdfplumber
+from utils.file_process import handle_file_processing  # ✅ Import in each task file
+
 
 # Question 3
 def fetch_wikipedia_outline(question):

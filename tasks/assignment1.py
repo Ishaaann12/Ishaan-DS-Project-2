@@ -11,7 +11,8 @@ import requests
 from typing import Optional
 from dotenv import load_dotenv
 from fastapi import UploadFile
-from utils import handle_file_processing
+from utils.file_process import handle_file_processing  # ✅ Import in each task file
+
 import zipfile
 import pandas as pd
 import tempfile

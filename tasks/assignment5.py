@@ -1,4 +1,5 @@
 # ASSIGNMENT 5
+from utils.file_process import handle_file_processing  # ✅ Import in each task file
 
 # Question 2
 import re

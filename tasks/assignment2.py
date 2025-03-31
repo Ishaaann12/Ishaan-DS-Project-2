@@ -4,6 +4,8 @@ import json
 import numpy as np
 from PIL import Image
 import colorsys
+from utils.file_process import handle_file_processing  # ✅ Import in each task file
+
 from bs4 import BeautifulSoup  # To handle HTML input
 def process_light_pixel_task(question, file_path):
     """

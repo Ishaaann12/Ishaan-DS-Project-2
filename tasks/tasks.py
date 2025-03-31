@@ -1,4 +1,5 @@
-from utils import handle_file_processing
+from utils.file_process import handle_file_processing  # ✅ Import in each task file
+
 from typing import Optional
 import requests
 from fastapi import UploadFile
