@@ -51,20 +51,13 @@ async def run_question(
 
     return JSONResponse(content={"answer": answer})
 
-
-from fastapi.openapi.utils import get_openapi
-
-@app.get("/openapi.json")
-async def get_open_api_endpoint():
-    return get_openapi(title="My API", version="1.0", routes=app.routes)
+@app.post("/test-upload/")
+async def test_upload(file: UploadFile = File(...)):
+    content = await file.read()
+    return {"filename": file.filename, "size": len(content)}
 
 
 
 @app.get("/api/health")
 def health_check():
     return {"status": "OK"}
-
-
-@app.get("/docs")
-def docs_redirect():
-    return {"message": "Swagger UI should be at /docs"}
