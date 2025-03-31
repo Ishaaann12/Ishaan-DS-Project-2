@@ -36,7 +36,7 @@ async def answer_question(
     else:
         print("📂 No file uploaded.")
     answer = handle_task(question, file)
-    return JSONResponse(content={"answer": answer})  # Ensure proper JSON output
+    return JSONResponse(content={"answer": str(answer)}) # Ensure proper JSON output
 
 
 @app.post("/run")
