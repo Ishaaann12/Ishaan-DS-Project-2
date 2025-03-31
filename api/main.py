@@ -52,6 +52,11 @@ async def run_question(
     return JSONResponse(content={"answer": answer})
 
 
+from fastapi.openapi.utils import get_openapi
+
+@app.get("/openapi.json")
+async def get_open_api_endpoint():
+    return get_openapi(title="My API", version="1.0", routes=app.routes)
 
 
 
