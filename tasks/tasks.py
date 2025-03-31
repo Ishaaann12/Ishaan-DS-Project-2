@@ -126,16 +126,16 @@ import importlib
 import inspect
 def execute_function(function_name, question, file_path):
     """Dynamically import the correct assignment file and execute the function"""
-    for module_name in assignment_modules.keys():
+    for module_name, function_names in assignment_modules.keys():
         try:
             # Correct way to dynamically import modules
             module = importlib.import_module(f"tasks.{module_name}")
-
-            function = getattr(module, function_name, None)
-            if function:
-                print(f"✅ Function {function_name} found in {module_name}")
-                sig = inspect.signature(function)
-                return function(question, file_path) if "file_path" in sig.parameters else function(question)
+            if function_name in function_names:
+                function = getattr(module, function_name, None)
+                if function:
+                    print(f"✅ Function {function_name} found in {module_name}")
+                    sig = inspect.signature(function)
+                    return function(question, file_path) if "file_path" in sig.parameters else function(question)
         except ImportError as e:
             print(f"⚠️ ImportError: {e}")  # Debugging information
             continue
