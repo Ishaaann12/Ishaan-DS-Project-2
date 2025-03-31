@@ -79,33 +79,37 @@ def is_valid_time(log_time, target_day, start_hour, end_hour):
 def count_successful_requests(question, file_path):
     """
     Count successful GET requests for a specified path on a given weekday within a time range.
-    Uses streaming to handle large files efficiently.
+    Uses chunked reading to handle large files without memory issues.
     """
     params = extract_parameters(question)
     if not params:
         return "Error: Could not extract parameters from the question."
 
     target_path, start_hour, end_hour, target_day = params
-
     count = 0
+
     try:
         with gzip.open(file_path, 'rt', encoding='utf-8', errors='ignore') as file:
-            # Process the file line by line (streaming approach)
-            for line in file:
-                match = log_pattern.match(line)
-                if not match:
-                    continue
+            while True:
+                chunk = file.read(1024 * 1024)  # Read 1MB at a time
+                if not chunk:
+                    break
 
-                log_time = match.group('time')
-                request = match.group('request')
-                status = int(match.group('status'))
+                for line in chunk.splitlines():  # Process each line in the chunk
+                    match = log_pattern.match(line)
+                    if not match:
+                        continue
 
-                if is_valid_time(log_time, target_day, start_hour, end_hour):
-                    request_parts = request.split()
-                    if len(request_parts) >= 2 and request_parts[0] == "GET":
-                        url = request_parts[1]
-                        if url.startswith(f"/{target_path}/") and 200 <= status < 300:
-                            count += 1
+                    log_time = match.group('time')
+                    request = match.group('request')
+                    status = int(match.group('status'))
+
+                    if is_valid_time(log_time, target_day, start_hour, end_hour):
+                        request_parts = request.split()
+                        if len(request_parts) >= 2 and request_parts[0] == "GET":
+                            url = request_parts[1]
+                            if url.startswith(f"/{target_path}/") and 200 <= status < 300:
+                                count += 1
 
         return count
 
@@ -113,6 +117,7 @@ def count_successful_requests(question, file_path):
         return "Error: File is too large to process on the server."
     except Exception as e:
         return f"Error: {str(e)}"
+
 
 
 
