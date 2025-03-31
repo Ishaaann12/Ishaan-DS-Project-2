@@ -325,7 +325,7 @@ def process_text_to_json_multicursors(question, file_path):
     # 🔹 Generate SHA-256 hash locally
     json_hash = hashlib.sha256(json_str.encode()).hexdigest()
 
-    return {"answer": json_hash}
+    return json_hash
 
 
 # Question 12
@@ -383,7 +383,7 @@ def process_zip_for_symbol_sum(question, file_path):
                     return {"answer": f"Error processing {filename}: {str(e)}"}
 
             print(f"✅ Total Sum: {total_sum}")
-            return {"answer": str(total_sum)}
+            return str(int(total_sum))
 
         except Exception as e:
             print(f"❌ Exception: {str(e)}")
@@ -414,7 +414,7 @@ def calculate_filtered_size(question, file_path):
         return {"error": "Could not extract required parameters from the question."}
     
     # **Extract ZIP contents**
-    extract_dir = "extracted_files"
+    extract_dir = "/tmp/extracted_files"
     os.makedirs(extract_dir, exist_ok=True)
 
     with zipfile.ZipFile(file_path, 'r') as zip_ref:
