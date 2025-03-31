@@ -126,7 +126,7 @@ import importlib
 import inspect
 def execute_function(function_name, question, file_path):
     """Dynamically import the correct assignment file and execute the function"""
-    for module_name, function_names in assignment_modules.keys():
+    for module_name, function_names in assignment_modules.items():
         try:
             # Correct way to dynamically import modules
             module = importlib.import_module(f"tasks.{module_name}")
