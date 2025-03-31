@@ -7,13 +7,13 @@ import colorsys
 from utils.file_process import handle_file_processing  # ✅ Import in each task file
 
 from bs4 import BeautifulSoup  # To handle HTML input
-def process_light_pixel_task(question, file_path):
+def process_light_pixel_task(question, file_path=None):
     """
     Extracts Python code, fixes errors, and processes an image to count bright pixels.
 
     Parameters:
     - question (str): The task description (used for extracting brightness threshold).
-    - file_path (str): Path to the image file.
+    - file_path (str, optional): Path to the image file. If None, a default image is used.
 
     Returns:
     - str: The number of pixels exceeding the brightness threshold.
@@ -36,10 +36,55 @@ def process_light_pixel_task(question, file_path):
     match = re.search(r"lightness\s*>\s*([\d\.]+)", question)
     threshold = float(match.group(1)) if match else 0.312  # Default to 0.312
 
-    # Open the image and process brightness
-    image = Image.open(file_path)
+    # Use provided file or default hardcoded image
+    if file_path:
+        image = Image.open(file_path)
+    else:
+        image = Image.open("lenna.webp")  # Replace with your actual image file path
+
+    # Process brightness
     rgb = np.array(image) / 255.0
     lightness = np.apply_along_axis(lambda x: colorsys.rgb_to_hls(*x)[1], 2, rgb)
     light_pixels = np.sum(lightness > threshold)
 
     return str(light_pixels)
+
+
+
+
+# def process_light_pixel_task(question, file_path):
+#     """
+#     Extracts Python code, fixes errors, and processes an image to count bright pixels.
+
+#     Parameters:
+#     - question (str): The task description (used for extracting brightness threshold).
+#     - file_path (str): Path to the image file.
+
+#     Returns:
+#     - str: The number of pixels exceeding the brightness threshold.
+#     """
+    
+#     def extract_python_code(question):
+#         """Extracts Python code from JSON or HTML question formats."""
+#         try:
+#             data = json.loads(question)
+#             if "code" in data:
+#                 return data["code"]
+#         except json.JSONDecodeError:
+#             pass  # Not JSON, proceed to HTML extraction
+
+#         soup = BeautifulSoup(question, "html.parser")
+#         code_blocks = soup.find_all("code")
+#         return "\n".join([block.get_text() for block in code_blocks]) if code_blocks else ""
+
+#     # Extract brightness threshold dynamically
+#     match = re.search(r"lightness\s*>\s*([\d\.]+)", question)
+#     threshold = float(match.group(1)) if match else 0.312  # Default to 0.312
+
+#     # Open the image and process brightness
+#     image = Image.open(file_path)
+#     rgb = np.array(image) / 255.0
+#     lightness = np.apply_along_axis(lambda x: colorsys.rgb_to_hls(*x)[1], 2, rgb)
+#     light_pixels = np.sum(lightness > threshold)
+
+#     return str(light_pixels)
