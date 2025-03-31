@@ -90,24 +90,72 @@ def count_successful_requests(question, file_path):
     count = 0
     try:
         with gzip.open(file_path, 'rt', encoding='utf-8', errors='ignore') as file:
+            # Process the file line by line (streaming approach)
             for line in file:
                 match = log_pattern.match(line)
-                if match:
-                    log_time = match.group('time')
-                    request = match.group('request')
-                    status = int(match.group('status'))
+                if not match:
+                    continue
 
-                    if is_valid_time(log_time, target_day, start_hour, end_hour):
-                        request_parts = request.split()
-                        if len(request_parts) >= 2 and request_parts[0] == "GET":
-                            url = request_parts[1]
-                            if url.startswith(f"/{target_path}/") and 200 <= status < 300:
-                                count += 1
+                log_time = match.group('time')
+                request = match.group('request')
+                status = int(match.group('status'))
+
+                if is_valid_time(log_time, target_day, start_hour, end_hour):
+                    request_parts = request.split()
+                    if len(request_parts) >= 2 and request_parts[0] == "GET":
+                        url = request_parts[1]
+                        if url.startswith(f"/{target_path}/") and 200 <= status < 300:
+                            count += 1
 
         return count
 
     except MemoryError:
         return "Error: File is too large to process on the server."
+    except Exception as e:
+        return f"Error: {str(e)}"
+
+
+
+
+
+
+
+
+
+
+
+# def count_successful_requests(question, file_path):
+#     """
+#     Count successful GET requests for a specified path on a given weekday within a time range.
+#     Uses streaming to handle large files efficiently.
+#     """
+#     params = extract_parameters(question)
+#     if not params:
+#         return "Error: Could not extract parameters from the question."
+
+#     target_path, start_hour, end_hour, target_day = params
+
+#     count = 0
+#     try:
+#         with gzip.open(file_path, 'rt', encoding='utf-8', errors='ignore') as file:
+#             for line in file:
+#                 match = log_pattern.match(line)
+#                 if match:
+#                     log_time = match.group('time')
+#                     request = match.group('request')
+#                     status = int(match.group('status'))
+
+#                     if is_valid_time(log_time, target_day, start_hour, end_hour):
+#                         request_parts = request.split()
+#                         if len(request_parts) >= 2 and request_parts[0] == "GET":
+#                             url = request_parts[1]
+#                             if url.startswith(f"/{target_path}/") and 200 <= status < 300:
+#                                 count += 1
+
+#         return count
+
+#     except MemoryError:
+#         return "Error: File is too large to process on the server."
 # def count_successful_requests(question, file_path):
 #     """
 #     Count successful GET requests for a specified path on a given weekday within a time range.
