@@ -78,12 +78,9 @@ def is_valid_time(log_time, target_day, start_hour, end_hour):
 
 import gzip
 
-import gzip
-
-def count_successful_requests(question, file_path):
+def count_successful_requests(question, gz_stream):
     """
-    Count successful GET requests for a specified path on a given weekday within a time range.
-    Uses streaming to handle large files efficiently.
+    Count successful GET requests from a .gz stream without storing it in memory.
     """
     params = extract_parameters(question)
     if not params:
@@ -91,19 +88,16 @@ def count_successful_requests(question, file_path):
 
     target_path, start_hour, end_hour, target_day = params
     count = 0
-    MAX_LINES = 500000  # Limit number of lines read to prevent overload
+    MAX_LINES = 500000  # Stop processing after this many lines
 
     try:
-        with gzip.open(file_path, 'rt', encoding='utf-8', errors='ignore') as file:
-            for i, line in enumerate(file):
-                if i > MAX_LINES:  # Stop processing after a limit to prevent memory overload
-                    print("⚠️ File too large, stopping processing early")
-                    break
-                
-                match = log_pattern.match(line)
-                if not match:
-                    continue
+        for i, line in enumerate(gz_stream):
+            if i > MAX_LINES:
+                print("⚠️ File too large, stopping processing early")
+                break
 
+            match = log_pattern.match(line)
+            if match:
                 log_time = match.group('time')
                 request = match.group('request')
                 status = int(match.group('status'))
@@ -117,10 +111,9 @@ def count_successful_requests(question, file_path):
 
         return count
 
-    except MemoryError:
-        return "Error: File is too large to process on the server."
     except Exception as e:
         return f"Error: {str(e)}"
+
 
 
 
